@@ -21,7 +21,7 @@ abstract contract Base_Test is Test {
         _manager = new BookManager(0, "cloneable blank", owner);
     }
 
-    function testCanDeployBook() public virtual {
+    function testDeployBook() public virtual {
         _deployer.deployBook(1, "Book One");
 
         BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
@@ -30,16 +30,17 @@ abstract contract Base_Test is Test {
     }
 
     function testStoreVerses() public virtual {
+        uint256 ARRAY_LEN = 10;
         _deployer.deployBook(1, "Book One");
 
         BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
 
 
-        uint256[] memory _verseNumbers = new uint256[](10);
-        uint256[] memory _chapterNumbers = new uint256[](10);
-        string[] memory _verseContent = new string[](10);
+        uint256[] memory _verseNumbers = new uint256[](ARRAY_LEN);
+        uint256[] memory _chapterNumbers = new uint256[](ARRAY_LEN);
+        string[] memory _verseContent = new string[](ARRAY_LEN);
 
-        for (uint256 i = 0; i < 10; i++) {
+        for (uint256 i = 0; i < ARRAY_LEN; i++) {
             uint256 ip1 = i + 1;
             _verseNumbers[i] = ip1;
             _chapterNumbers[i] = 1;
@@ -52,7 +53,78 @@ abstract contract Base_Test is Test {
 
         BookManager.VerseStr memory lastVerseAdded = _manager.getLastVerseAdded();
 
-        assertEq(lastVerseAdded.verseNumber, 10);
+        assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
         assertEq(lastVerseAdded.verseContent, "TEST 10");
     }
+
+    function testGetLastVerseAdded() public virtual {
+        uint256 ARRAY_LEN = 30;
+        _deployer.deployBook(1, "Book One");
+
+        BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
+
+
+        uint256[] memory _verseNumbers = new uint256[](ARRAY_LEN);
+        uint256[] memory _chapterNumbers = new uint256[](ARRAY_LEN);
+        string[] memory _verseContent = new string[](ARRAY_LEN);
+
+        for (uint256 i = 0; i < ARRAY_LEN; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        _manager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
+
+        BookManager.VerseStr memory lastVerseAdded = _manager.getLastVerseAdded();
+
+        assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
+        assertEq(lastVerseAdded.verseContent, "TEST 30");
+    }
+
+    function testGetVerseByNumber() public virtual {
+        uint256 ARRAY_LEN = 20;
+        _deployer.deployBook(1, "Book One");
+
+        BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
+
+
+        uint256[] memory _verseNumbers = new uint256[](ARRAY_LEN);
+        uint256[] memory _chapterNumbers = new uint256[](ARRAY_LEN);
+        string[] memory _verseContent = new string[](ARRAY_LEN);
+
+        for (uint256 i = 0; i < ARRAY_LEN; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        _manager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
+
+        BookManager.VerseStr memory firstVerse = _manager.getVerseByNumber(1);
+
+        assertEq(firstVerse.verseNumber, 1);
+        assertEq(firstVerse.verseContent, "TEST 1");
+
+        BookManager.VerseStr memory anotherTest = _manager.getVerseByNumber(11);
+
+        assertEq(anotherTest.verseNumber, 11);
+        assertEq(anotherTest.verseContent, "TEST 11");
+    }
+
+    // tests:
+    //          confirmVerse
+    //          finalizeBook
+    //          
+    //          PRIVATES:
+    //                      preventSkippingVerse
+    //                      preventSkippingChapter
+    //                      enforceFirstVerseOfNewChapter
+    //                      enforceFirstVerse
 }
