@@ -31,19 +31,20 @@ abstract contract Base_Test is Test {
 
     function testStoreVerses() public virtual {
         _deployBook(2, "Book Two");
+        BookManager _thisManager = BookManager(_books[1].bookAddress);
 
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
         (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
 
-        _manager.addBatchVerses(
+        _thisManager.addBatchVerses(
             _bookId,
             _verseNumbers,
             _chapterNumbers,
             _verseContent
         );
 
-        BookManager.VerseStr memory lastVerseAdded = _manager
+        BookManager.VerseStr memory lastVerseAdded = _thisManager
             .getLastVerseAdded();
 
         assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
@@ -52,19 +53,20 @@ abstract contract Base_Test is Test {
 
     function testGetLastVerseAdded() public virtual {
         _deployBook(2, "Book Two");       
+        BookManager _thisManager = BookManager(_books[1].bookAddress);
 
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); 
 
         (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
 
-        _manager.addBatchVerses(
+        _thisManager.addBatchVerses(
             _bookId,
             _verseNumbers,
             _chapterNumbers,
             _verseContent
         );
 
-        BookManager.VerseStr memory lastVerseAdded = _manager
+        BookManager.VerseStr memory lastVerseAdded = _thisManager
             .getLastVerseAdded();
 
         assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
@@ -73,24 +75,25 @@ abstract contract Base_Test is Test {
 
     function testGetVerseByNumber() public virtual {
         _deployBook(2, "Book Two");
+        BookManager _thisManager = BookManager(_books[1].bookAddress);
 
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
         (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
 
-        _manager.addBatchVerses(
+        _thisManager.addBatchVerses(
             _bookId,
             _verseNumbers,
             _chapterNumbers,
             _verseContent
         );
 
-        BookManager.VerseStr memory firstVerse = _manager.getVerseByNumber(1);
+        BookManager.VerseStr memory firstVerse = _thisManager.getVerseByNumber(1);
 
         assertEq(firstVerse.verseNumber, 1);
         assertEq(firstVerse.verseContent, "TEST 1");
 
-        BookManager.VerseStr memory anotherTest = _manager.getVerseByNumber(11);
+        BookManager.VerseStr memory anotherTest = _thisManager.getVerseByNumber(11);
 
         assertEq(anotherTest.verseNumber, 11);
         assertEq(anotherTest.verseContent, "TEST 11");
