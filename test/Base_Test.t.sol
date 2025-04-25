@@ -7,8 +7,8 @@ import {BookManager} from "../src/BookManager.sol";
 import {Test, console2} from "forge-std/Test.sol";
 
 abstract contract Base_Test is Test {
-    BookDeployer bookDeployerContract;
-    BookManager bookManagerContract;
+    BookDeployer _deployer;
+    BookManager _manager;
     address owner;
     address alice;
     // address bob;
@@ -17,18 +17,42 @@ abstract contract Base_Test is Test {
         owner = address(this); // The test contract is the deployer/owner.
         alice = address(0x1);
         // bob = address(0x2);
-        bookDeployerContract = new BookDeployer(owner);
-        bookManagerContract = new BookManager(0, "cloneable blank", owner);
+        _deployer = new BookDeployer(owner);
+        _manager = new BookManager(0, "cloneable blank", owner);
     }
 
     function testCanDeployBook() public virtual {
-        bookDeployerContract.deployBook(1, "Test One");
+        _deployer.deployBook(1, "Book One");
 
-        BookDeployer.Deployment[] memory deployments = bookDeployerContract.getDeployments();
+        BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
 
-        console2.log(deployments.length);
+        assertEq(deployments.length, 1);
+    }
 
-        // vm.expectEmit(true, false, false, true);
-        // emit Book(address(bookDeployerContract), 1, "Test One");
+    function testStoreVerses() public virtual {
+        _deployer.deployBook(1, "Book One");
+
+        BookDeployer.Deployment[] memory deployments = _deployer.getDeployments();
+
+
+        uint256[] memory _verseNumbers = new uint256[](10);
+        uint256[] memory _chapterNumbers = new uint256[](10);
+        string[] memory _verseContent = new string[](10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        _manager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
+
+        BookManager.VerseStr memory lastVerseAdded = _manager.getLastVerseAdded();
+
+        assertEq(lastVerseAdded.verseNumber, 10);
+        assertEq(lastVerseAdded.verseContent, "TEST 10");
     }
 }
