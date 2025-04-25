@@ -61,8 +61,15 @@ contract BookManager is Ownable {
 		require(!hasBeenFinalized, "This contract has already been finalized.");
 		_;
 	}
-
-	constructor(uint256 index, string memory title, address contractOwner) {
+	
+	// First change to this contract:
+	// OpenZeppelin's Ownable contract introduced a constructor that requires an argument (specifically, an initial owner address) starting with version 5.0.0. Prior to this version, the constructor did not require any arguments and would automatically set the deployer as the initial owner
+	// Starting in v5.0.0, the constructor signature changed to
+	// constructor(address initialOwner)
+	
+	// CHANGE::
+	// constructor(uint256 index, string memory title, address contractOwner) {
+	constructor(uint256 index, string memory title, address contractOwner) Ownable(msg.sender) {
 		_transferOwnership(contractOwner);
 		deployerAddress = msg.sender;
 		bookIndex = index;

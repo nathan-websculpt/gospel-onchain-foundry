@@ -31,7 +31,14 @@ contract BookDeployer is Ownable {
 		string title
 	);
 
-	constructor(address contractOwner) {
+	// First change to this contract:
+	// OpenZeppelin's Ownable contract introduced a constructor that requires an argument (specifically, an initial owner address) starting with version 5.0.0. Prior to this version, the constructor did not require any arguments and would automatically set the deployer as the initial owner
+	// Starting in v5.0.0, the constructor signature changed to
+	// constructor(address initialOwner)
+	
+	// CHANGE::
+	// constructor(address contractOwner) {
+	constructor(address contractOwner) Ownable(msg.sender) {
 		_transferOwnership(contractOwner);
 	}
 
