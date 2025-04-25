@@ -19,6 +19,7 @@ abstract contract Base_Test is Test {
         // bob = address(0x2);
         bookDeployerContract = new BookDeployer(owner);
         bookManagerContract = new BookManager(0, "cloneable blank", owner);
+        // bookManagerContract = new BookManager(0, "cloneable blank", address(bookDeployerContract));
     }
 
     function testCanDeployBook() public virtual {

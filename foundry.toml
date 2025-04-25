@@ -6,6 +6,7 @@ ffi = true
 evm_version = 'shanghai'
 
 remappings = [
+    # '@openzeppelin/=lib/openzeppelin-contracts',
     '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
 ]
 
