@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 ffi = true
 evm_version = 'shanghai'
+viaIR = true
 
 remappings = [
     # '@openzeppelin/=lib/openzeppelin-contracts',
