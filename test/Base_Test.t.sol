@@ -34,8 +34,69 @@ abstract contract Base_Test is Test {
         _deployBook(1, "Book One");
     }
 
+    function testDeployerOwnershipTransfer() public virtual {
+        assertEq(_deployer.owner(), owner);
+        _deployer.transferOwnership(alice);
+        assertEq(_deployer.owner(), alice);
+
+        // should revert when old owner makes a book
+        vm.expectRevert();
+        _deployBook(2, "Book Two");
+
+        // make sure alice can deploy a book
+        vm.prank(alice);
+        _deployBook(2, "Book Two");
+        assertEq(_books.length, 2);
+    }
+
+    function testManagerOwnershipTransfer() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        assertEq(_thisManager.owner(), owner);
+        _thisManager.transferOwnership(alice);
+        assertEq(_thisManager.owner(), alice);
+
+        // set up some verses
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+
+
+        // should revert when old owner stores verses
+        vm.expectRevert();
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+
+        // make sure alice can store verses
+        vm.prank(alice);
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+
+        // make sure that ONLY Alice's verses are stored
+        assertEq(_thisManager.numberOfVerses(), ARRAY_LEN);
+    }
+
     function testDeployBook() public virtual {
         assertEq(_books.length, 1);
+    }
+
+    function testOnlyOwnerCanDeployNewBook() public virtual { 
+        vm.startPrank(alice);
+        vm.expectRevert();
+        _deployer.deployBook(2, "test");
+        vm.stopPrank();
     }
 
     function testStoreVerses() public virtual {
@@ -81,6 +142,29 @@ abstract contract Base_Test is Test {
             assertEq(loggedChapterNumber, _chapterNumbers[i]);
             assertEq(loggedVerseContent, _verseContent[i]);
         }
+    }
+
+    function testOnlyOwnerCanStoreVerses() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+        vm.startPrank(alice);
+        vm.expectRevert();
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );        
+        vm.stopPrank();
     }
 
     function testStoreVerses_inMultipleBooks() public virtual {
