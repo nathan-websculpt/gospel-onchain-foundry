@@ -12,6 +12,9 @@ import {Test, console2, Vm} from "forge-std/Test.sol";
 
 
 // TODO: tests for ownership misuse
+// TODO: tests empty verses/content?
+
+
 abstract contract Base_Test is Test {
     uint256 constant ARRAY_LEN = 20;
     BookDeployer _deployer;
@@ -19,12 +22,12 @@ abstract contract Base_Test is Test {
     BookDeployer.Deployment[] _books;
     address owner;
     address alice;
-    // address bob;
+    address bob;
 
     function setUp() public virtual {
         owner = address(this); // The test contract is the deployer/owner.
         alice = address(0x1);
-        // bob = address(0x2);
+        bob = address(0x2);
         _deployer = new BookDeployer(owner);
         _manager = new BookManager(0, "cloneable blank", owner);
 
@@ -286,10 +289,17 @@ abstract contract Base_Test is Test {
                 vm.toString(i + 1)
             );
 
-            // now test a confirmation
+            // now test a confirmation by Alice
             vm.startPrank(alice);
             vm.expectEmit(true, true, true, true);
             emit BookManager.Confirmation(alice, _verseBytesId);
+            _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
+            vm.stopPrank();
+
+            // now test a second confirmation by Bob
+            vm.startPrank(bob);
+            vm.expectEmit(true, true, true, true);
+            emit BookManager.Confirmation(bob, _verseBytesId);
             _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
             vm.stopPrank();
         }
@@ -308,7 +318,7 @@ abstract contract Base_Test is Test {
         BookManager _thisManager = BookManager(_books[0].bookAddress);
         _thisManager.finalizeBook(_bookId);
 
-        // now try to add verses
+        // now try to add verses to this finalized book (should fail)
 
         (
             uint256[] memory _verseNumbers,
@@ -325,7 +335,56 @@ abstract contract Base_Test is Test {
         );
     }
 
-    //TODO: test revert when same person confirms verse twice
+    function test_RevertsWhen_samePersonConfirmsVerseTwice() public virtual {        
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+        vm.recordLogs();
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+        Vm.Log[] memory recordedLogs = vm.getRecordedLogs();
+
+        for (uint256 i = 0; i < recordedLogs.length; i++) {
+            // The .data field contains the ABI-encoded values of the event's non-indexed arguments, packed together in the order they appear in the event definition
+            (
+                bytes memory loggedBookId,
+                uint256 loggedVerseId,
+                uint256 loggedVerseNumber,
+                uint256 loggedChapterNumber,
+                string memory loggedVerseContent
+            ) = abi.decode(recordedLogs[i].data, (bytes, uint256, uint256, uint256, string));
+
+
+            // this verse ID bytes array is just for the subgraph
+            bytes memory _verseBytesId = abi.encodePacked(
+                "0xverse",
+                vm.toString(i + 1)
+            );
+
+            // now test a confirmation
+            vm.startPrank(alice);
+            vm.expectEmit(true, true, true, true);
+            emit BookManager.Confirmation(alice, _verseBytesId);
+            _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
+
+            vm.expectRevert("This address has already confirmed this verse.");
+            _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
+            vm.stopPrank();
+        }
+    }
+
+    // VERSE/CHAPTER ORDER ENFORCEMENT
 
     // The contract's functionality is expecting all within the batch to be consecutive; however, the prevention occurs based on the last added to the previous batch
     function test_RevertsWhen_skippingVerseNumber() public virtual {
@@ -532,6 +591,8 @@ abstract contract Base_Test is Test {
             _batch2verseContent
         );
     }
+    // END: VERSE/CHAPTER ORDER ENFORCEMENT
+
 
     // HELPERS
 
