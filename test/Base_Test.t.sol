@@ -10,6 +10,8 @@ import {BookDeployer} from "../src/BookDeployer.sol";
 import {BookManager} from "../src/BookManager.sol";
 import {Test, console2, Vm} from "forge-std/Test.sol";
 
+
+// TODO: tests for ownership misuse
 abstract contract Base_Test is Test {
     uint256 constant ARRAY_LEN = 20;
     BookDeployer _deployer;
@@ -286,12 +288,44 @@ abstract contract Base_Test is Test {
 
             // now test a confirmation
             vm.startPrank(alice);
-            vm.expectEmit(true, true, false, false);
+            vm.expectEmit(true, true, true, true);
             emit BookManager.Confirmation(alice, _verseBytesId);
             _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
             vm.stopPrank();
         }
     }
+
+    function testFinalizeBook() public virtual {        
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); //only for subgraph
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        vm.expectEmit(true, true, true, true);
+        emit BookManager.Finalization(address(this), _bookId);
+        _thisManager.finalizeBook(_bookId);
+    }
+
+    function test_RevertWhen_storeVerseAfterFinalization() public virtual {    
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); //only for subgraph
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        _thisManager.finalizeBook(_bookId);
+
+        // now try to add verses
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+        vm.expectRevert("This contract has already been finalized.");
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+    }
+
+    //TODO: test revert when same person confirms verse twice
 
     // The contract's functionality is expecting all within the batch to be consecutive; however, the prevention occurs based on the last added to the previous batch
     function test_RevertsWhen_skippingVerseNumber() public virtual {
@@ -528,8 +562,4 @@ abstract contract Base_Test is Test {
         return (_verseNumbers, _chapterNumbers, _verseContent);
     }
     // END: HELPERS
-
-    // tests:
-    //          confirmVerse
-    //          finalizeBook
 }
