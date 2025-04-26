@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 
 import {BookDeployer} from "../src/BookDeployer.sol";
 import {BookManager} from "../src/BookManager.sol";
-import {Test, console2} from "forge-std/Test.sol";
+import {Test, console2, Vm} from "forge-std/Test.sol";
 
 abstract contract Base_Test is Test {
     uint256 constant ARRAY_LEN = 20;
@@ -30,34 +30,61 @@ abstract contract Base_Test is Test {
     }
 
     function testStoreVerses() public virtual {
-        _deployBook(2, "Book Two");
-        BookManager _thisManager = BookManager(_books[1].bookAddress);
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
 
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
-        (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
 
+        vm.recordLogs();
         _thisManager.addBatchVerses(
             _bookId,
             _verseNumbers,
             _chapterNumbers,
             _verseContent
         );
+        Vm.Log[] memory recordedLogs = vm.getRecordedLogs();
+        assertEq(recordedLogs.length, ARRAY_LEN);
 
-        BookManager.VerseStr memory lastVerseAdded = _thisManager
-            .getLastVerseAdded();
+        for (uint256 i = 0; i < recordedLogs.length; i++) {
+            // Match indexed parameters
+            address signer = address(
+                uint160(uint256(recordedLogs[i].topics[1]))
+            );
+            assertEq(signer, address(this));
 
-        assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
-        assertEq(lastVerseAdded.verseContent, "TEST 20");
+            // The .data field contains the ABI-encoded values of the event's non-indexed arguments, packed together in the order they appear in the event definition
+            (
+                bytes memory loggedBookId,
+                uint256 loggedVerseId,
+                uint256 loggedVerseNumber,
+                uint256 loggedChapterNumber,
+                string memory loggedVerseContent
+            ) = abi.decode(recordedLogs[i].data, (bytes, uint256, uint256, uint256, string));
+
+            assertEq(loggedBookId, _bookId);
+            assertEq(loggedVerseId, _verseNumbers[i]);
+            assertEq(loggedVerseNumber, _verseNumbers[i]);
+            assertEq(loggedChapterNumber, _chapterNumbers[i]);
+            assertEq(loggedVerseContent, _verseContent[i]);
+        }
     }
 
     function testGetLastVerseAdded() public virtual {
-        _deployBook(2, "Book Two");       
+        _deployBook(2, "Book Two");
         BookManager _thisManager = BookManager(_books[1].bookAddress);
 
-        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); 
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
-        (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
 
         _thisManager.addBatchVerses(
             _bookId,
@@ -79,7 +106,11 @@ abstract contract Base_Test is Test {
 
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
-        (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVerses();
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
 
         _thisManager.addBatchVerses(
             _bookId,
@@ -88,12 +119,16 @@ abstract contract Base_Test is Test {
             _verseContent
         );
 
-        BookManager.VerseStr memory firstVerse = _thisManager.getVerseByNumber(1);
+        BookManager.VerseStr memory firstVerse = _thisManager.getVerseByNumber(
+            1
+        );
 
         assertEq(firstVerse.verseNumber, 1);
         assertEq(firstVerse.verseContent, "TEST 1");
 
-        BookManager.VerseStr memory anotherTest = _thisManager.getVerseByNumber(11);
+        BookManager.VerseStr memory anotherTest = _thisManager.getVerseByNumber(
+            11
+        );
 
         assertEq(anotherTest.verseNumber, 11);
         assertEq(anotherTest.verseContent, "TEST 11");
@@ -107,6 +142,7 @@ abstract contract Base_Test is Test {
         _books = _deployer.getDeployments();
     }
 
+    // returns 3 generic arrays for verse numbers, chapter numbers, and verse text-content
     function _makeVerses()
         private
         returns (uint256[] memory, uint256[] memory, string[] memory)
