@@ -32,6 +32,7 @@ abstract contract Base_Test is Test {
     function testStoreVerses() public virtual {
         BookManager _thisManager = BookManager(_books[0].bookAddress);
 
+        // At the end of the day, _bookId is only for the subgraph
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
         (
@@ -51,7 +52,6 @@ abstract contract Base_Test is Test {
         assertEq(recordedLogs.length, ARRAY_LEN);
 
         for (uint256 i = 0; i < recordedLogs.length; i++) {
-            // Match indexed parameters
             address signer = address(
                 uint160(uint256(recordedLogs[i].topics[1]))
             );
@@ -93,8 +93,7 @@ abstract contract Base_Test is Test {
             _verseContent
         );
 
-        BookManager.VerseStr memory lastVerseAdded = _thisManager
-            .getLastVerseAdded();
+        BookManager.VerseStr memory lastVerseAdded = _thisManager.getLastVerseAdded();
 
         assertEq(lastVerseAdded.verseNumber, ARRAY_LEN);
         assertEq(lastVerseAdded.verseContent, "TEST 20");
