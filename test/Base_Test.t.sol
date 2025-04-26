@@ -64,8 +64,6 @@ abstract contract Base_Test is Test {
             string[] memory _verseContent
         ) = _makeVerses();
 
-
-
         // should revert when old owner stores verses
         vm.expectRevert();
         _thisManager.addBatchVerses(
@@ -142,29 +140,6 @@ abstract contract Base_Test is Test {
             assertEq(loggedChapterNumber, _chapterNumbers[i]);
             assertEq(loggedVerseContent, _verseContent[i]);
         }
-    }
-
-    function testOnlyOwnerCanStoreVerses() public virtual {
-        BookManager _thisManager = BookManager(_books[0].bookAddress);
-
-        // At the end of the day, _bookId is only for the subgraph
-        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
-
-        (
-            uint256[] memory _verseNumbers,
-            uint256[] memory _chapterNumbers,
-            string[] memory _verseContent
-        ) = _makeVerses();
-
-        vm.startPrank(alice);
-        vm.expectRevert();
-        _thisManager.addBatchVerses(
-            _bookId,
-            _verseNumbers,
-            _chapterNumbers,
-            _verseContent
-        );        
-        vm.stopPrank();
     }
 
     function testStoreVerses_inMultipleBooks() public virtual {
@@ -269,6 +244,29 @@ abstract contract Base_Test is Test {
                 assertEq(loggedVerseContent, _b3verseContent[i - 25]); 
             }
         }
+    }
+
+    function testOnlyOwnerCanStoreVerses() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+        vm.startPrank(alice);
+        vm.expectRevert();
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );        
+        vm.stopPrank();
     }
 
     function testGetLastVerseAdded() public virtual {
@@ -395,6 +393,25 @@ abstract contract Base_Test is Test {
         vm.expectEmit(true, true, true, true);
         emit BookManager.Finalization(address(this), _bookId);
         _thisManager.finalizeBook(_bookId);
+    }
+
+    function testOnlyOwnerCanFinalizeBook() public virtual {
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); //only for subgraph
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        assertEq(_thisManager.owner(), owner);
+        _thisManager.transferOwnership(alice);
+        assertEq(_thisManager.owner(), alice);
+
+        // make sure old owner can't finalize book
+        vm.expectRevert();
+        _thisManager.finalizeBook(_bookId);
+
+        // make sure new owner can finalize book
+        vm.startPrank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit BookManager.Finalization(alice, _bookId);
+        _thisManager.finalizeBook(_bookId);
+        vm.stopPrank();
     }
 
     function test_RevertWhen_storeVerseAfterFinalization() public virtual {    
