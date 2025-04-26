@@ -241,6 +241,58 @@ abstract contract Base_Test is Test {
         assertEq(anotherTest.verseContent, "TEST 11");
     }
 
+    function testConfirmVerses() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
+
+        (
+            uint256[] memory _verseNumbers,
+            uint256[] memory _chapterNumbers,
+            string[] memory _verseContent
+        ) = _makeVerses();
+
+        vm.recordLogs();
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+        Vm.Log[] memory recordedLogs = vm.getRecordedLogs();
+
+        for (uint256 i = 0; i < recordedLogs.length; i++) {
+            // The .data field contains the ABI-encoded values of the event's non-indexed arguments, packed together in the order they appear in the event definition
+            (
+                bytes memory loggedBookId,
+                uint256 loggedVerseId,
+                uint256 loggedVerseNumber,
+                uint256 loggedChapterNumber,
+                string memory loggedVerseContent
+            ) = abi.decode(recordedLogs[i].data, (bytes, uint256, uint256, uint256, string));
+
+            assertEq(loggedBookId, _bookId);
+            assertEq(loggedVerseId, _verseNumbers[i]);
+            assertEq(loggedVerseNumber, _verseNumbers[i]);
+            assertEq(loggedChapterNumber, _chapterNumbers[i]);
+            assertEq(loggedVerseContent, _verseContent[i]);
+
+
+            // this verse ID bytes array is just for the subgraph
+            bytes memory _verseBytesId = abi.encodePacked(
+                "0xverse",
+                vm.toString(i + 1)
+            );
+
+            // now test a confirmation
+            vm.startPrank(alice);
+            vm.expectEmit(true, true, false, false);
+            emit BookManager.Confirmation(alice, _verseBytesId);
+            _thisManager.confirmVerse(_verseBytesId, loggedVerseId);
+            vm.stopPrank();
+        }
+    }
+
     // The contract's functionality is expecting all within the batch to be consecutive; however, the prevention occurs based on the last added to the previous batch
     function test_RevertsWhen_skippingVerseNumber() public virtual {
         BookManager _thisManager = BookManager(_books[0].bookAddress);
