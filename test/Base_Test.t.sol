@@ -287,6 +287,162 @@ abstract contract Base_Test is Test {
         );
     }
 
+    function test_RevertsWhen_skippingChapterNumber() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        //store first batch
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](5);
+        string[] memory _verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+
+        //store second batch (which will start with a skipped verse, and revert)
+        uint256[] memory _batch2verseNumbers = new uint256[](5);
+        uint256[] memory _batch2chapterNumbers = new uint256[](5);
+        string[] memory _batch2verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1; 
+            _batch2verseNumbers[i] = ip1;
+            _batch2chapterNumbers[i] = 3; //will get the chapter number out of whack (skipping a chapter)
+            _batch2verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+
+        vm.expectRevert("The contract is preventing you from skipping a chapter.");
+        _thisManager.addBatchVerses(
+            _bookId,
+            _batch2verseNumbers,
+            _batch2chapterNumbers,
+            _batch2verseContent
+        );
+    }
+
+    function test_RevertsWhen_skippingFirstVerseOfBible() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        //store first batch
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](5);
+        string[] memory _verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 2; // like starting with Genesis 1:2
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+
+        vm.expectRevert("The contract is preventing you from starting with a verse that is not 1:1");
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+    }
+
+    function test_RevertsWhen_skippingFirstChapterOfBible() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        //store first batch
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](5);
+        string[] memory _verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1; 
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 2; // like starting with Genesis 2:1
+            _verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+
+        vm.expectRevert("The contract is preventing you from starting with a verse that is not 1:1");
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+    }
+
+    function test_RevertsWhen_skippingFirstVerseOfNewChapter() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+
+        // At the end of the day, _bookId is only for the subgraph
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        //store first batch
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](5);
+        string[] memory _verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+        _thisManager.addBatchVerses(
+            _bookId,
+            _verseNumbers,
+            _chapterNumbers,
+            _verseContent
+        );
+
+        //store second batch (which will start with a skipped verse, and revert)
+        uint256[] memory _batch2verseNumbers = new uint256[](5);
+        uint256[] memory _batch2chapterNumbers = new uint256[](5);
+        string[] memory _batch2verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 2;  // starts a new chapter off on verse 2, which should revert
+            _batch2verseNumbers[i] = ip1;
+            _batch2chapterNumbers[i] = 2;
+            _batch2verseContent[i] = string(
+                abi.encodePacked("TEST ", vm.toString(ip1))
+            );
+        }
+
+        vm.expectRevert("The contract is preventing you from starting a new chapter with a verse that is not 1.");
+        _thisManager.addBatchVerses(
+            _bookId,
+            _batch2verseNumbers,
+            _batch2chapterNumbers,
+            _batch2verseContent
+        );
+    }
+
     // HELPERS
 
     // sets up a new book, gets all deployments afterwards
@@ -320,10 +476,4 @@ abstract contract Base_Test is Test {
     // tests:
     //          confirmVerse
     //          finalizeBook
-    //
-    //          PRIVATES:
-    //                      preventSkippingVerse
-    //                      preventSkippingChapter
-    //                      enforceFirstVerseOfNewChapter
-    //                      enforceFirstVerse
 }
