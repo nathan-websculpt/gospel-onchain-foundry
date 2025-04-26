@@ -25,8 +25,8 @@ contract BookManager is Ownable {
 	bool public hasBeenFinalized = false;
 	uint256 public numberOfChapters = 0;
 	uint256 public numberOfVerses = 0;
-	uint256 public bookIndex;
-	address public deployerAddress;
+	uint256 public bookIndex; // a: should be immutable?
+	address public deployerAddress; // a: should be immutable?
 	string public bookTitle;
 	string public constant BIBLE_VERSION = "KJV";
 	string public constant BIBLE_VERSION_LONG = "King James Version";

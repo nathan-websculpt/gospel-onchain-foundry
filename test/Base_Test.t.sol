@@ -1,5 +1,9 @@
 // SPDX-License-Idenifier: MIT
 
+// forge coverage --ir-minimum
+// forge coverage --ir-minimum --report debug
+// forge coverage --ir-minimum --report debug > coverage.txt
+
 pragma solidity 0.8.28;
 
 import {BookDeployer} from "../src/BookDeployer.sol";
