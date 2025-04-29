@@ -32,6 +32,13 @@ jobs:
           forge fmt --check
         id: fmt
 
+      - name: Ensure OpenZeppelin Contracts present
+        run: |
+          rm -rf lib/openzeppelin-contracts
+          mkdir -p lib
+          git clone --depth 1 --branch v5.0.0 https://github.com/OpenZeppelin/openzeppelin-contracts.git lib/openzeppelin-contracts
+          ls -al lib/openzeppelin-contracts/contracts/access/
+
       - name: Run Forge build
         run: |
           forge build --sizes
