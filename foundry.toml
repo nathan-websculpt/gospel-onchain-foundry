@@ -8,7 +8,7 @@ viaIR = true
 
 
 remappings = [
-    '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/'
+    '@openzeppelin/=lib/openzeppelin-contracts'
 ]
 
 
