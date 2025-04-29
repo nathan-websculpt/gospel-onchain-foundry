@@ -12,12 +12,12 @@ contract DeployScript is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        
+
         BookDeployer bookDeployer = new BookDeployer(address(this));
         BookManager bookManager = new BookManager(0, "clone", address(this));
-        
+
         console.log("sdfsfsasf deployed at:", address(bookDeployer));
-        
+
         vm.stopBroadcast();
     }
 }
