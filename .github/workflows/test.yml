@@ -32,6 +32,16 @@ jobs:
           forge fmt --check
         id: fmt
 
+      - name: Show current directory
+  run: pwd
+
+- name: List root directory
+  run: ls -al
+
+- name: List OpenZeppelin contracts directory
+  run: ls -al lib/openzeppelin-contracts/contracts/access/
+
+
       - name: Run Forge build
         run: |
           forge build --sizes
