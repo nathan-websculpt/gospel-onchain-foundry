@@ -20,12 +20,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Install dependencies
-        run: forge install
-
       - name: Show Forge version
         run: |
           forge --version
@@ -34,6 +28,12 @@ jobs:
         run: |
           forge fmt --check
         id: fmt
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dependencies
+        run: forge install
 
       - name: Run Forge build
         run: |
