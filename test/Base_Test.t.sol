@@ -166,7 +166,7 @@ abstract contract Base_Test is Test {
         uint256 gas = gasleft();
         uint256 firstTxGas = 0;
         uint256 lastTxGas = 0;
-        console2.log("initial gas: ", gas);
+        console2.log("initial gas: %d \n\n", gas);
 
         JSONVerses memory jsonVerses = _getBook("genesis");
         (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = _makeVersesFromBook(jsonVerses);
@@ -194,7 +194,6 @@ abstract contract Base_Test is Test {
             // percentage increase = ((newVal - oldVal) / oldVal) x 100%
             if (oldGasUsed != 0) {
                 if (oldGasUsed < gasUsed) {
-                    console2.log("\n");
                     uint256 diff = gasUsed - oldGasUsed;
                     uint256 scaledPercentage = (diff * scale) / oldGasUsed;
 
@@ -206,15 +205,11 @@ abstract contract Base_Test is Test {
                             vm.toString(integerPart), ".", decimalPart < 10 ? "0" : "", vm.toString(decimalPart), "%"
                         )
                     );
-
-                    string memory gasUsedStr =
-                        string(abi.encodePacked("Gas used for batch # ", vm.toString(start - 100), ":"));
-                    console2.log(gasUsedStr, gasUsed);
-                    console2.log("increase", diff);
-                    console2.log("percentage increase", rslt);
-                    console2.log("\n");
+                    console2.log("gas used:", gasUsed);
+                    console2.log("increase:", diff);
+                    console2.log("percentage increase:", rslt);
                 } else {
-                    console2.log("No Increase, gas used: ", gasUsed);
+                    console2.log("gas used: %d \n  no increase", gasUsed);
                 }
             } else {
                 firstTxGas = gas - gasleft();
@@ -224,10 +219,10 @@ abstract contract Base_Test is Test {
             oldGasUsed = gasUsed;
 
             gas = gasleft();
-            console2.log("ENDOFLOOP gasLeft: ", gas);
+            console2.log("ENDOFLOOP gasLeft: %d \n", gas);
         }
 
-        console2.log("\n\n firstTxGas: %d \n lastTxGas: %d", firstTxGas, lastTxGas);
+        console2.log("\n\n firstTxGas: %d \n lastTxGas: %d \n", firstTxGas, lastTxGas);
 
         //now log the entire increase (across all batches)
         if (lastTxGas > firstTxGas) {
@@ -244,11 +239,8 @@ abstract contract Base_Test is Test {
             );
             console2.log("\n entire % increase", rslt);
             console2.log("first tx gas", firstTxGas);
-            console2.log("last tx gas", lastTxGas);
-        } else {
-            console2.log("\n First tx cost more than the final tx - no extra log needed\n\n");
-        }
-        
+            console2.log("last tx gas: %d \n", lastTxGas);
+        }        
     }
 
     function testDeployerOwnershipTransfer() public virtual {
