@@ -74,90 +74,9 @@ abstract contract Base_Test is Test {
     //     }
     // }
 
-    // mock data
-    // forge test --mt testLogGasIncreasePerBatch
-    function testLogGasIncreasePerBatch() public virtual {
-        bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
-
-        uint256 scale = 10000; // for precision/fixed-point arithmetic
-        uint256 oldGasUsed = 0;
-        uint256 gas = gasleft();
-        uint256 firstTxGas = 0;
-        uint256 lastTxGas = 0;
-        console2.log("initial gas: ", gas);
-
-        //store 5 batches
-        for (uint256 i = 0; i < 5; i++) {
-            (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) =
-                _makeVerses(i + 1);
-
-            _manager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
-
-            uint256 gasUsed = gas - gasleft();
-
-            // percentage increase = ((newVal - oldVal) / oldVal) x 100%
-            if (oldGasUsed != 0) {
-                if (oldGasUsed < gasUsed) {
-                    console2.log("\n");
-                    uint256 diff = gasUsed - oldGasUsed;
-                    uint256 scaledPercentage = (diff * scale) / oldGasUsed;
-
-                    uint256 integerPart = scaledPercentage / 100;
-                    uint256 decimalPart = scaledPercentage % 100;
-
-                    string memory rslt = string(
-                        abi.encodePacked(
-                            vm.toString(integerPart), ".", decimalPart < 10 ? "0" : "", vm.toString(decimalPart), "%"
-                        )
-                    );
-
-                    string memory gasUsedStr =
-                        string(abi.encodePacked("Gas used for batch # ", vm.toString(i + 1), ":"));
-                    console2.log(gasUsedStr, gasUsed);
-                    console2.log("increase", diff);
-                    console2.log("percentage increase", rslt);
-                    console2.log("\n");
-                } else {
-                    console2.log("No Increase, gas used: ", gasUsed);
-                }
-            } else {
-                firstTxGas = gas - gasleft();
-                console2.log("FIRST RUN, gas used: ", vm.toString(firstTxGas));
-            }
-            if (i == 5) lastTxGas = gasUsed;
-            oldGasUsed = gasUsed;
-
-            gas = gasleft();
-            console2.log("ENDOFLOOP gasLeft: ", gas);
-        }
-
-        //now log the entire increase (across all 5 batches)
-        if (lastTxGas > firstTxGas) {
-            uint256 diff = lastTxGas - firstTxGas;
-            uint256 scaledPercentage = (diff * scale) / firstTxGas;
-
-            uint256 integerPart = scaledPercentage / 100;
-            uint256 decimalPart = scaledPercentage % 100;
-
-            string memory rslt = string(
-                abi.encodePacked(
-                    vm.toString(integerPart), ".", decimalPart < 10 ? "0" : "", vm.toString(decimalPart), "%"
-                )
-            );
-            console2.log("\n");
-            console2.log("entire % increase", rslt);
-            console2.log("first tx gas", firstTxGas);
-            console2.log("last tx gas", lastTxGas);
-        } else {
-            console2.log("\n");
-            console2.log("First tx cost more than the final tx - no extra log needed");
-            console2.log("\n");
-            console2.log("\n");
-        }
-    }
-
     // real data
     // forge test --mt testLogGasIncreasePerBatch_RealData
+    // TODO: add asserts - currently just for console
     function testLogGasIncreasePerBatch_RealData() public virtual {
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef");
 
