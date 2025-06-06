@@ -14,7 +14,7 @@ import {Test, console2, Vm} from "forge-std/Test.sol";
 // TODO: tests for ownership misuse
 // TODO: tests empty verses/content?
 
-abstract contract Base_Test is Test {    
+abstract contract Base_Test is Test {
     DeployScript deployer = new DeployScript();
 
     uint256 constant ARRAY_LEN = 100;
@@ -57,24 +57,20 @@ abstract contract Base_Test is Test {
 
     // forge test --mt testjsonfile
     function testjsonfile() public virtual {
-        string memory root = vm.projectRoot();
-        // string memory path = string.concat(root, "/test/json/json_bible/genesis.json");
-        string memory path = string.concat(root, "/test/json/json_bible/ruth.json");
-        string memory json = vm.readFile(path);
-        bytes memory data = vm.parseJson(json);
-        JSONVerses memory jsonVerses = abi.decode(data, (JSONVerses));
- 
+        // JSONVerses memory jsonVerses = _getBook("genesis");
+        JSONVerses memory jsonVerses = _getBook("ruth");
+
         for (uint256 i = 0; i < jsonVerses.verses.length; i++) {
             AlphabeticalVerseStruct memory v = jsonVerses.verses[i];
-            
+
             console2.log(
                 // "verse: %d, chapter: %d, verseContent: %s",
                 "verse: %d, chapter: %d, length: %d",
                 v.VerseNumber,
                 v.ChapterNumber,
                 v.StringLength
-                // v.VerseContent,
             );
+            // v.VerseContent,
         }
     }
 
@@ -91,18 +87,10 @@ abstract contract Base_Test is Test {
 
         //store 5 batches
         for (uint256 i = 0; i < 5; i++) {
-            (
-                uint256[] memory _verseNumbers,
-                uint256[] memory _chapterNumbers,
-                string[] memory _verseContent
-            ) = _makeVerses(i + 1);
+            (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) =
+                _makeVerses(i + 1);
 
-            _manager.addBatchVerses(
-                _bookId,
-                _verseNumbers,
-                _chapterNumbers,
-                _verseContent
-            );
+            _manager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
 
             uint256 gasUsed = gas - gasleft();
 
@@ -112,19 +100,18 @@ abstract contract Base_Test is Test {
                     console2.log("\n");
                     uint256 diff = gasUsed - oldGasUsed;
                     uint256 scaledPercentage = (diff * scale) / oldGasUsed;
-                    
+
                     uint256 integerPart = scaledPercentage / 100;
                     uint256 decimalPart = scaledPercentage % 100;
 
-                    string memory rslt = string(abi.encodePacked(
-                        vm.toString(integerPart),
-                        ".",
-                        decimalPart < 10 ? "0" : "",
-                        vm.toString(decimalPart),
-                        "%"
-                    ));
+                    string memory rslt = string(
+                        abi.encodePacked(
+                            vm.toString(integerPart), ".", decimalPart < 10 ? "0" : "", vm.toString(decimalPart), "%"
+                        )
+                    );
 
-                    string memory gasUsedStr = string(abi.encodePacked("Gas used for batch # ", vm.toString(i + 1), ":"));
+                    string memory gasUsedStr =
+                        string(abi.encodePacked("Gas used for batch # ", vm.toString(i + 1), ":"));
                     console2.log(gasUsedStr, gasUsed);
                     console2.log("increase", diff);
                     console2.log("percentage increase", rslt);
@@ -136,7 +123,7 @@ abstract contract Base_Test is Test {
                 firstTxGas = gas - gasleft();
                 console2.log("FIRST RUN, gas used: ", vm.toString(firstTxGas));
             }
-            if(i == 5) lastTxGas = gasUsed;
+            if (i == 5) lastTxGas = gasUsed;
             oldGasUsed = gasUsed;
 
             gas = gasleft();
@@ -144,20 +131,18 @@ abstract contract Base_Test is Test {
         }
 
         //now log the entire increase (across all 5 batches)
-        if(lastTxGas > firstTxGas) {
+        if (lastTxGas > firstTxGas) {
             uint256 diff = lastTxGas - firstTxGas;
             uint256 scaledPercentage = (diff * scale) / firstTxGas;
-            
+
             uint256 integerPart = scaledPercentage / 100;
             uint256 decimalPart = scaledPercentage % 100;
 
-            string memory rslt = string(abi.encodePacked(
-                vm.toString(integerPart),
-                ".",
-                decimalPart < 10 ? "0" : "",
-                vm.toString(decimalPart),
-                "%"
-            ));
+            string memory rslt = string(
+                abi.encodePacked(
+                    vm.toString(integerPart), ".", decimalPart < 10 ? "0" : "", vm.toString(decimalPart), "%"
+                )
+            );
             console2.log("\n");
             console2.log("entire % increase", rslt);
             console2.log("first tx gas", firstTxGas);
@@ -677,6 +662,7 @@ abstract contract Base_Test is Test {
         _books = _deployer.getDeployments();
     }
 
+    // mock data
     // returns 3 generic arrays for verse numbers, chapter numbers, and verse text-content
     function _makeVerses(uint256 chapterNumber) private returns (uint256[] memory, uint256[] memory, string[] memory) {
         uint256[] memory _verseNumbers = new uint256[](ARRAY_LEN);
@@ -692,5 +678,19 @@ abstract contract Base_Test is Test {
 
         return (_verseNumbers, _chapterNumbers, _verseContent);
     }
+
+    // real data
+    // returns an array of structs (representing verses) for the provided book title
+    function _getBook(string memory _bookName) private returns (JSONVerses memory) {
+        string memory root = vm.projectRoot();
+        string memory fileName = string.concat(_bookName, ".json");
+        string memory path = string.concat("/test/json/json_bible/", fileName);
+        string memory fullpath = string.concat(root, path);
+        string memory json = vm.readFile(fullpath);
+        bytes memory data = vm.parseJson(json);
+        JSONVerses memory jsonVerses = abi.decode(data, (JSONVerses));
+        return jsonVerses;
+    }
+
     // END: HELPERS
 }

@@ -33,7 +33,14 @@ contract BookManager is Ownable {
     string public constant BIBLE_VERSION_LONG = "King James Version";
     string public constant CODE_VERSION = "0.0.2";
 
-    event Verse(address indexed signer, bytes bookId, uint256 verseId, uint256 verseNumber, uint256 chapterNumber, string verseContent);
+    event Verse(
+        address indexed signer,
+        bytes bookId,
+        uint256 verseId,
+        uint256 verseNumber,
+        uint256 chapterNumber,
+        string verseContent
+    );
 
     event Confirmation(address indexed confirmedBy, bytes verseId);
 
@@ -83,8 +90,13 @@ contract BookManager is Ownable {
         require(length == _verseContent.length, "Invalid array lengths - lengths did not match.");
         // make sure a verse has been added before checking for skipped verses/chapters
         if (verses[1].verseNumber != 0) {
-            require(preventSkippingVerse(_verseNumber[0], _chapterNumber[0]), "The contract is preventing you from skipping a verse.");
-            require(preventSkippingChapter(_chapterNumber[0]), "The contract is preventing you from skipping a chapter.");
+            require(
+                preventSkippingVerse(_verseNumber[0], _chapterNumber[0]),
+                "The contract is preventing you from skipping a verse."
+            );
+            require(
+                preventSkippingChapter(_chapterNumber[0]), "The contract is preventing you from skipping a chapter."
+            );
             require(
                 enforceFirstVerseOfNewChapter(_verseNumber[0], _chapterNumber[0]),
                 "The contract is preventing you from starting a new chapter with a verse that is not 1."
@@ -109,7 +121,10 @@ contract BookManager is Ownable {
 
     /// @dev Allows a user to confirm a verse
     /// @notice Once you have compared a verse against the original source, you can confirm it
-    function confirmVerse(bytes memory _verseId, uint256 _numericalId) external hasNotConfirmed(msg.sender, _numericalId) {
+    function confirmVerse(bytes memory _verseId, uint256 _numericalId)
+        external
+        hasNotConfirmed(msg.sender, _numericalId)
+    {
         confirmations[msg.sender].push(_numericalId);
         emit Confirmation(msg.sender, _verseId);
     }
@@ -134,7 +149,12 @@ contract BookManager is Ownable {
         return verses[_numericalId];
     }
 
-    function _storeVerse(bytes memory _bookId, uint256 _verseNumber, uint256 _chapterNumber, string memory _verseContent) private {
+    function _storeVerse(
+        bytes memory _bookId,
+        uint256 _verseNumber,
+        uint256 _chapterNumber,
+        string memory _verseContent
+    ) private {
         numberOfVerses++;
         VerseStr storage thisVerse = verses[numberOfVerses];
         thisVerse.verseId = numberOfVerses;
