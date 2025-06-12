@@ -185,7 +185,7 @@ contract BookManager is Ownable {
     function preventSkippingChapter(uint256 _chapterNumber) private view returns (bool) {
         bool canContinue = true;
         VerseStr storage lastVerseAdded = verses[numberOfVerses];
-        if (_chapterNumber != lastVerseAdded.chapterNumber && _chapterNumber != lastVerseAdded.chapterNumber + 1) {
+        if (_chapterNumber != lastVerseAdded.chapterNumber && _chapterNumber != lastVerseAdded.chapterNumber + 1) { // a: magic number
             canContinue = false;
         }
         return canContinue;
@@ -194,7 +194,7 @@ contract BookManager is Ownable {
     function enforceFirstVerseOfNewChapter(uint256 _verseNumber, uint256 _chapterNumber) private view returns (bool) {
         bool canContinue = true;
         VerseStr storage lastVerseAdded = verses[numberOfVerses];
-        if (_chapterNumber != lastVerseAdded.chapterNumber && _verseNumber != 1) {
+        if (_chapterNumber != lastVerseAdded.chapterNumber && _verseNumber != 1) { // a: magic number
             canContinue = false;
         }
         return canContinue;
@@ -202,9 +202,12 @@ contract BookManager is Ownable {
 
     function enforceFirstVerse(uint256 _verseNumber, uint256 _chapterNumber) private pure returns (bool) {
         bool canContinue = true;
-        if (_chapterNumber != 1 || _verseNumber != 1) {
+        if (_chapterNumber != 1 || _verseNumber != 1) { // a: magic number
             canContinue = false;
         }
         return canContinue;
     }
 }
+
+
+ // TODO: enforce that they aren't storing one that has already been stored?

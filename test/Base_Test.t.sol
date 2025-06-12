@@ -4,6 +4,22 @@
 // forge coverage --ir-minimum --report debug
 // forge coverage --ir-minimum --report debug > coverage.txt
 
+// html coverage report
+// forge coverage --ir-minimum --report lcov
+// genhtml lcov.info --output-directory coverage-html
+
+// html coverage branches report
+// genhtml lcov.info -o report --branch-coverage --rc derive_function_end_line=0 --output-directory coverage-branches-html
+
+// in coverage html: 
+//                  Blue Highlighted Line = Not relevant for coverage (not executable code).
+//                  Red Highlighted Line  = Code not executed at all during tests.
+//                  Blue +                = Not executable, for reference only.
+//                  Red ++                = Uncovered branch (a logical path was never executed in tests).
+//                                              usually appears next to a conditional where one or more possible execution paths have not been tested
+
+
+
 pragma solidity 0.8.28;
 
 import {BookDeployer} from "../src/BookDeployer.sol";
@@ -457,6 +473,68 @@ abstract contract Base_Test is Test {
         vm.stopPrank();
     }
 
+    // specifically testing the bool return of preventSkippingChapter()
+    // to appease branch-coverage
+    function test_ContinuesWhen_notSkippingChapter() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        //store first batch
+        (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = provideBatchTuple(5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;
+            _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+
+        vm.recordLogs();
+        _thisManager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
+
+        //store second batch (which will NOT skip a chapter, and NOT revert)
+        (uint256[] memory _b2verseNumbers, uint256[] memory _b2chapterNumbers, string[] memory _b2verseContent) = provideBatchTuple(5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 6;
+            _b2verseNumbers[i] = ip1;
+            _b2chapterNumbers[i] = 1;           // SAME CHAPTER AS ABOVE, FIRST BATCH
+            _b2verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+
+        _thisManager.addBatchVerses(_bookId, _b2verseNumbers, _b2chapterNumbers, _b2verseContent);
+
+        Vm.Log[] memory recordedLogs = vm.getRecordedLogs();
+        assertEq(recordedLogs.length, 10);
+
+        for (uint256 i = 0; i < 10; i++) {
+            // The .data field contains the ABI-encoded values of the event's non-indexed arguments, packed together in the order they appear in the event definition
+            (
+                bytes memory loggedBookId,
+                uint256 loggedVerseId,
+                uint256 loggedVerseNumber,
+                uint256 loggedChapterNumber,
+                string memory loggedVerseContent
+            ) = abi.decode(recordedLogs[i].data, (bytes, uint256, uint256, uint256, string));
+
+            if (i < 5) {
+                //chapter one [5 items]
+                assertEq(loggedBookId, _bookId);
+                assertEq(loggedVerseId, _verseNumbers[i]);
+                assertEq(loggedVerseNumber, _verseNumbers[i]);
+                assertEq(loggedChapterNumber, _chapterNumbers[i]);
+                assertEq(loggedVerseContent, _verseContent[i]);
+            } else {
+                //chapter two [5 items]
+                assertEq(loggedBookId, _bookId);
+                assertEq(loggedVerseId, _b2verseNumbers[i - 5]);
+                assertEq(loggedVerseNumber, _b2verseNumbers[i - 5]);
+                assertEq(loggedChapterNumber, _b2chapterNumbers[i - 5]);
+                assertEq(loggedVerseContent, _b2verseContent[i - 5]);
+            }
+        }
+    }
+
     function test_RevertWhen_storeVerseAfterFinalization() public virtual {
         bytes memory _bookId = abi.encodePacked("0x1234567890abcdef"); //only for subgraph
         BookManager _thisManager = BookManager(_books[0].bookAddress);
@@ -565,7 +643,7 @@ abstract contract Base_Test is Test {
         }
         _thisManager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
 
-        //store second batch (which will start with a skipped verse, and revert)
+        //store second batch (which will start with a skipped chapter, and revert)
         uint256[] memory _batch2verseNumbers = new uint256[](5);
         uint256[] memory _batch2chapterNumbers = new uint256[](5);
         string[] memory _batch2verseContent = new string[](5);
@@ -714,6 +792,12 @@ abstract contract Base_Test is Test {
         bytes memory data = vm.parseJson(json);
         JSONVerses memory jsonVerses = abi.decode(data, (JSONVerses));
         return jsonVerses;
+    }
+
+    // TODO: refactor
+    // TODO: add to other proj
+    function provideBatchTuple(uint256 len) private returns(uint256[] memory, uint256[] memory, string[] memory){
+        return(new uint256[](len), new uint256[](len), new string[](len));
     }
 
     // END: HELPERS

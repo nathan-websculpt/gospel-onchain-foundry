@@ -1,3 +1,24 @@
+#### Notes
+
+Useful for viewing test coverage
+
+```bash
+# html coverage report
+forge coverage --ir-minimum --report lcov
+genhtml lcov.info --output-directory coverage-html
+
+# html coverage branches report
+genhtml lcov.info -o report --branch-coverage --rc derive_function_end_line=0 --output-directory coverage-branches-html
+
+```
+
+Viewing coverage html:
+- Blue Highlighted Line = Not relevant for coverage (not executable code).
+- Red Highlighted Line  = Code not executed at all during tests.
+- Blue +                = Not executable, for reference only.
+- Red ++                = Uncovered branch (a logical path was never executed in tests).
+
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
