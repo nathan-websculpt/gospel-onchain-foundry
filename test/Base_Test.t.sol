@@ -479,7 +479,7 @@ abstract contract Base_Test is Test {
         BookManager _thisManager = BookManager(_books[0].bookAddress);
         bytes memory _bookId = abi.encodePacked("0xbookone");
 
-        //store first batch
+        //make first batch
         (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = provideBatchTuple(5);
 
         for (uint256 i = 0; i < 5; i++) {
@@ -489,6 +489,7 @@ abstract contract Base_Test is Test {
             _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
         }
 
+        // store first batch
         vm.recordLogs();
         _thisManager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
 
@@ -533,6 +534,48 @@ abstract contract Base_Test is Test {
                 assertEq(loggedVerseContent, _b2verseContent[i - 5]);
             }
         }
+    }
+
+    // new
+    // when the amount of chapters is different than verses
+    function test_RevertsWhen_numberOfChaptersIsWrong() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](4); // get amount of chapters out of whack
+        string[] memory _verseContent = new string[](5);
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _verseContent[i] = string(abi.encodePacked("TEST ", vm.toString(ip1)));
+        }
+        for (uint256 i = 0; i < 4; i++) { _chapterNumbers[i] = 1; } // handle chapters separately
+
+        vm.expectRevert("Invalid array lengths - lengths did not match.");
+        _thisManager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
+    }
+
+    // new
+    // when the amount of verse contents is different than verses
+    function test_RevertsWhen_numberOfVerseContentsIsWrong() public virtual {
+        BookManager _thisManager = BookManager(_books[0].bookAddress);
+        bytes memory _bookId = abi.encodePacked("0xbookone");
+
+        uint256[] memory _verseNumbers = new uint256[](5);
+        uint256[] memory _chapterNumbers = new uint256[](5); 
+        string[] memory _verseContent = new string[](4); // get amount of verse contents out of whack
+
+        for (uint256 i = 0; i < 5; i++) {
+            uint256 ip1 = i + 1;
+            _verseNumbers[i] = ip1;
+            _chapterNumbers[i] = 1;            
+        }
+        for (uint256 i = 0; i < 4; i++) { _verseContent[i] = "test"; } // handle verse contents separately
+
+        vm.expectRevert("Invalid array lengths - lengths did not match.");
+        _thisManager.addBatchVerses(_bookId, _verseNumbers, _chapterNumbers, _verseContent);
     }
 
     function test_RevertWhen_storeVerseAfterFinalization() public virtual {
@@ -596,9 +639,7 @@ abstract contract Base_Test is Test {
         bytes memory _bookId = abi.encodePacked("0xbookone");
 
         //store first batch
-        uint256[] memory _verseNumbers = new uint256[](5);
-        uint256[] memory _chapterNumbers = new uint256[](5);
-        string[] memory _verseContent = new string[](5);
+        (uint256[] memory _verseNumbers, uint256[] memory _chapterNumbers, string[] memory _verseContent) = provideBatchTuple(5);
 
         for (uint256 i = 0; i < 5; i++) {
             uint256 ip1 = i + 1;
